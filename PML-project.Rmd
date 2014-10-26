@@ -1,0 +1,177 @@
+---
+title: "Recognition of weight lifting exercises"
+output:
+  html_document:
+    keep_md: yes
+---
+
+# Executive summary
+This report describes the process followed to build a prediction model that infers the way a weight lifting exercise is performed. The data used to train the model are gathered from six participants that are being monitored by a set of accelerometers while they perform a barbel lifting exercise in five different ways (one right and four common mistakes).
+
+In order to make this research fully reproducible, it contains the complete R-code necessary to get the data sets (which are available online), explore them, clean and prepare the data sets, build the model and use it to predict the outcome for 20 instances. The final model is a random forest predictor which obtains a very good out of sample accuracy (around 98%). The predictor is robust, trained using k-fold cross validation, which balances bias and variance trade-offs using the out of sample accuracy as a metric to choose the best model.
+
+# Getting the data
+The following chunk of code prepares the work space, fetches the data sets and loads them in the environment:
+```{r getData, echo=TRUE}
+library(caret)
+library(ggplot2)
+rm(list=ls())
+dataUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+validationUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+dataFile <- "pml-training.csv"
+validationFile <- "pml-testing.csv"
+# download.file(dataUrl, dataFile, method='auto')
+# download.file(validationUrl, validationFile, method='auto')
+dataSet <- read.csv(dataFile, na.strings=c("NA", ""))
+validationSet <- read.csv(validationFile, na.strings=c("NA", ""))
+numInstances <- dim(dataSet)[1]; numFeatures <- dim(dataSet)[2]
+dim(validationSet)
+```
+With `r numFeatures` features in each data set apart from the type of exercise and `r numInstances` instances in the training set. 
+
+# Exploratory analysis
+Taking a first look a the data we can see some of the (a priori) most representative features:
+```{r headDataSet, echo=TRUE}
+dataSet[1:5, c('user_name', 'classe', 'num_window', 'roll_belt', 'pitch_belt', 'yaw_belt')]
+```
+The following figure shows the class distribution for the data set:
+```{r classDistribution, echo=TRUE}
+qplot(classe, fill=classe, data=dataSet)
+```
+It can be seen that not all classes are equally sampled. It would be desirable to preserve the class distribution when splitting the data set into training and testing sets.
+Besides, the first five features are not interesting for prediction, apart from (maybe) the user name. Those features are:
+```{r dummyFeatures, echo=TRUE}
+names(dataSet)[c(1:5)[-2]]
+```
+
+# Cleaning data
+
+The following code gets rid of non interesting features and cast the rest of them as numeric values. Factor variables, such as the user name, are also converted to numeric:
+
+```{r as.numeric, echo=TRUE}
+# convert interesting features to numeric values
+dataSetNum <- dataSet[, c(2, 7:159)] # 2: user name
+validationSetNum <- validationSet[, c(2, 7:159)]
+# Store class in a separate variable for simplicity
+y <- dataSet$classe
+
+dataSetNum <- data.frame(sapply(dataSetNum, as.numeric))
+validationSetNum <- data.frame(sapply(validationSetNum, as.numeric))
+```
+
+The data set contains a huge percent of NA values:
+
+```{r naValues, echo=TRUE}
+mean(is.na(dataSetNum))
+hist(100*colMeans(is.na(dataSetNum)), col='lightblue', xlab='NA occurrences', ylab='num features', main = "Number of NA's (in %)")
+```
+Analyzing the NA distribution it can be seen that there are only two cases: those features which contain no NA's, and those that do. In the seconds case, when there are NA's in the data, they are present in almost the 100% of the instances. We could remove those features since they are not going to be useful for prediction:
+
+```{r removeNA, echo=TRUE}
+completeFeatures <- complete.cases(t(dataSetNum))
+dataSetNum <- dataSetNum[, completeFeatures]
+validationSetNum <- validationSetNum[, completeFeatures]
+```
+This could also be done using the `nearZeroVar()` function, but in this case it was pretty clear which features would have zero variance. 
+
+
+# Data partitioning
+```{r dataPartition, echo=TRUE}
+# Split training set into training and testing to build our predictor
+set.seed(3232)
+inTrain <- createDataPartition(y=y, p=0.75, list=FALSE)
+training <- dataSetNum[inTrain, ]
+testing <- dataSetNum[-inTrain, ]
+dim(training)
+dim(testing)
+```
+
+Besides, we could also remove those features which present a high correlation in the training set, since they are not going to provide useful information:
+
+```{r moreCleanUp, echo=TRUE}
+# remove highly correlated features
+corIdx <- findCorrelation(cor(training))
+training <- training[, -corIdx]
+testing <- testing[, -corIdx]
+validation <- validationSetNum[, -corIdx]
+```
+
+To refine a bit more the number of features used for the model training, we run a principal components analysis on the training data set. From the new set of features we keep only those that explain a 95% of the variability:
+
+```{r PCA, echo=TRUE}
+# use PCA to get rid of some features
+# keep only those that explain the 95% of the variability
+modPca <- preProcess(training, method = 'pca', threshold = 0.95)
+trainingPca <- predict(modPca, training)
+testingPca <- predict(modPca, testing)
+validationPca <- predict(modPca, validation)
+
+# add the class to the features datasets
+trainingPca$classe <- y[inTrain]
+testingPca$classe <- y[-inTrain]
+```
+ Finally the class is added back from the original data set.
+
+
+# Model training
+The model selected is a random forest predictor. The training process uses k-fold cross validation in order to avoid over fitting the training data. Not using all the available training data for building the model is going to increase the predictor bias, but on the other hand it has provided better out of sample errors during the tests. The model is trained according to the following code:
+
+
+```{r modelTraining, echo=TRUE}
+set.seed(32335)
+fitControl <- trainControl(# 5-fold CV
+    method = "repeatedcv", 
+    number = 5,
+    # repeated 5 times
+    repeats = 5)
+modFit <- train(classe ~., 
+                method='rf', 
+                trControl = fitControl, 
+                data = trainingPca)
+
+```
+
+The convergence of the training process is shown in the following figure:
+
+```{r plotResample, echo=TRUE}
+# plotting the resampling profile
+trellis.par.set(caretTheme())
+plot(modFit, col='purple', lw=1)
+```
+
+
+
+## Validation
+In order to validate the model, it is used to predict the classes for the training and testing data sets:
+
+```{r validation, echo=TRUE}
+# in sample error
+trainingPrediction <- predict(modFit, trainingPca)
+confusionMatrix(trainingPca$classe, trainingPrediction)
+
+# out of sample error
+testingPrediction <- predict(modFit, testingPca)
+confusionMatrix(testingPca$classe, testingPrediction)
+```
+
+It can be seen that the out of sample error is quite good, reaching an accuracy around the 98%.
+
+
+
+# Predictions
+Finally the trained model is used to predict the classes for the unlabeled data set. The obtained predictions are stored in separate files as required:
+
+```{r prediction, echo=TRUE}
+# Predict validation set
+prediction <- predict(modFit, validationPca)
+# save results in the submission format
+pml_write_files = function(x) {
+    n = length(x)
+    for (i in 1:n) {
+        filename = paste0("problem_id_", i, ".txt")
+        write.table(x[i], file = filename, quote = FALSE, row.names = FALSE, 
+                    col.names = FALSE)
+        }
+    }
+pml_write_files(prediction)
+```
