@@ -28,7 +28,7 @@
       </header>
       <section>
         <h1>
-<a name="pml-har-recognition-of-weight-lifting-exercises" class="anchor" href="#pml-har-recognition-of-weight-lifting-exercises"><span class="octicon octicon-link"></span></a>PML-HAR: Recognition of weight lifting exercises</h1>
+<a name="recognition-of-weight-lifting-exercises" class="anchor" href="#recognition-of-weight-lifting-exercises"><span class="octicon octicon-link"></span></a>Recognition of weight lifting exercises</h1>
 
 <h1>
 <a name="executive-summary" class="anchor" href="#executive-summary"><span class="octicon octicon-link"></span></a>Executive summary</h1>
@@ -42,8 +42,8 @@
 
 <p>The following chunk of code prepares the work space, fetches the data sets and loads them in the environment:</p>
 
-<div class="highlight highlight-r"><pre><span class="kn">library</span><span class="p">(</span>caret<span class="p">)</span>
-<span class="kn">library</span><span class="p">(</span>ggplot2<span class="p">)</span>
+<div class="highlight highlight-r"><pre><span class="kp">suppressWarnings</span><span class="p">(</span><span class="kn">library</span><span class="p">(</span>caret<span class="p">))</span>
+<span class="kp">suppressWarnings</span><span class="p">(</span><span class="kn">library</span><span class="p">(</span>ggplot2<span class="p">))</span>
 <span class="kp">rm</span><span class="p">(</span><span class="kt">list</span><span class="o">=</span><span class="kp">ls</span><span class="p">())</span>
 dataUrl <span class="o">&lt;-</span> <span class="s">"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"</span>
 validationUrl <span class="o">&lt;-</span> <span class="s">"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"</span>
@@ -67,7 +67,8 @@ numInstances <span class="o">&lt;-</span> <span class="kp">dim</span><span class
 
 <p>Taking a first look a the data we can see some of the (a priori) most representative features:</p>
 
-<div class="highlight highlight-r"><pre>dataSet<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="s">'user_name'</span><span class="p">,</span> <span class="s">'classe'</span><span class="p">,</span> <span class="s">'num_window'</span><span class="p">,</span> <span class="s">'roll_belt'</span><span class="p">,</span> <span class="s">'pitch_belt'</span><span class="p">,</span> <span class="s">'yaw_belt'</span><span class="p">)]</span>
+<div class="highlight highlight-r"><pre>dataSet<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="s">'user_name'</span><span class="p">,</span> <span class="s">'classe'</span><span class="p">,</span> <span class="s">'num_window'</span><span class="p">,</span>
+               <span class="s">'roll_belt'</span><span class="p">,</span> <span class="s">'pitch_belt'</span><span class="p">,</span> <span class="s">'yaw_belt'</span><span class="p">)]</span>
 </pre></div>
 
 <pre><code>##   user_name classe num_window roll_belt pitch_belt yaw_belt
@@ -83,8 +84,9 @@ numInstances <span class="o">&lt;-</span> <span class="kp">dim</span><span class
 <div class="highlight highlight-r"><pre>qplot<span class="p">(</span>classe<span class="p">,</span> fill<span class="o">=</span>classe<span class="p">,</span> data<span class="o">=</span>dataSet<span class="p">)</span>
 </pre></div>
 
-<p><img src="./PML-project_files/figure-html/classDistribution.png" alt="plot of chunk classDistribution"> 
-It can be seen that not all classes are equally sampled. It would be desirable to preserve the class distribution when splitting the data set into training and testing sets.
+<p><img src="./PML-project_files/figure-html/classDistribution.png" alt="plot of chunk classDistribution"> </p>
+
+<p>It can be seen that not all classes are equally sampled. It would be desirable to preserve the class distribution when splitting the data set into training and testing sets.
 Besides, the first five features are not interesting for prediction, apart from (maybe) the user name. Those features are:</p>
 
 <div class="highlight highlight-r"><pre><span class="kp">names</span><span class="p">(</span>dataSet<span class="p">)[</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">)[</span><span class="m">-2</span><span class="p">]]</span>
@@ -117,11 +119,14 @@ validationSetNum <span class="o">&lt;-</span> <span class="kt">data.frame</span>
 <pre><code>## [1] 0.6359
 </code></pre>
 
-<div class="highlight highlight-r"><pre>hist<span class="p">(</span><span class="m">100</span><span class="o">*</span><span class="kp">colMeans</span><span class="p">(</span><span class="kp">is.na</span><span class="p">(</span>dataSetNum<span class="p">)),</span> col<span class="o">=</span><span class="s">'lightblue'</span><span class="p">,</span> xlab<span class="o">=</span><span class="s">'NA occurrences'</span><span class="p">,</span> ylab<span class="o">=</span><span class="s">'num features'</span><span class="p">,</span> main <span class="o">=</span> <span class="s">"Number of NA's (in %)"</span><span class="p">)</span>
+<div class="highlight highlight-r"><pre>hist<span class="p">(</span><span class="m">100</span><span class="o">*</span><span class="kp">colMeans</span><span class="p">(</span><span class="kp">is.na</span><span class="p">(</span>dataSetNum<span class="p">)),</span> col<span class="o">=</span><span class="s">'lightblue'</span><span class="p">,</span> 
+     xlab<span class="o">=</span><span class="s">'NA occurrences'</span><span class="p">,</span> ylab<span class="o">=</span><span class="s">'num features'</span><span class="p">,</span> 
+     main <span class="o">=</span> <span class="s">"Number of NA's (in %)"</span><span class="p">)</span>
 </pre></div>
 
-<p><img src="./PML-project_files/figure-html/naValues.png" alt="plot of chunk naValues"> 
-Analyzing the NA distribution it can be seen that there are only two cases: those features which contain no NA's, and those that do. In the seconds case, when there are NA's in the data, they are present in almost the 100% of the instances. We could remove those features since they are not going to be useful for prediction:</p>
+<p><img src="./PML-project_files/figure-html/naValues.png" alt="plot of chunk naValues"> </p>
+
+<p>Analyzing the NA distribution it can be seen that there are only two cases: those features which contain no NA's, and those that do. In the seconds case, when there are NA's in the data, they are present in almost the 100% of the instances. We could remove those features since they are not going to be useful for prediction:</p>
 
 <div class="highlight highlight-r"><pre>completeFeatures <span class="o">&lt;-</span> complete.cases<span class="p">(</span><span class="kp">t</span><span class="p">(</span>dataSetNum<span class="p">))</span>
 dataSetNum <span class="o">&lt;-</span> dataSetNum<span class="p">[,</span> completeFeatures<span class="p">]</span>
@@ -132,6 +137,8 @@ validationSetNum <span class="o">&lt;-</span> validationSetNum<span class="p">[,
 
 <h1>
 <a name="data-partitioning" class="anchor" href="#data-partitioning"><span class="octicon octicon-link"></span></a>Data partitioning</h1>
+
+<p>The data set labeled with the type of exercise (classe) is split into a training and a testing dataset. The training set will be used to train the predictor and the testing to evaluate its out of sample accuracy. The following code splits the data giving a 75% to the  training set:</p>
 
 <div class="highlight highlight-r"><pre><span class="c1"># Split training set into training and testing to build our predictor</span>
 <span class="kp">set.seed</span><span class="p">(</span><span class="m">3232</span><span class="p">)</span>
@@ -181,16 +188,25 @@ testingPca<span class="o">$</span>classe <span class="o">&lt;-</span> y<span cla
 <p>The model selected is a random forest predictor. The training process uses k-fold cross validation in order to avoid over fitting the training data. Not using all the available training data for building the model is going to increase the predictor bias, but on the other hand it has provided better out of sample errors during the tests. The model is trained according to the following code:</p>
 
 <div class="highlight highlight-r"><pre><span class="kp">set.seed</span><span class="p">(</span><span class="m">32335</span><span class="p">)</span>
-fitControl <span class="o">&lt;-</span> trainControl<span class="p">(</span><span class="c1"># 5-fold CV</span>
-    method <span class="o">=</span> <span class="s">"repeatedcv"</span><span class="p">,</span> 
-    number <span class="o">=</span> <span class="m">5</span><span class="p">,</span>
-    <span class="c1"># repeated 5 times</span>
-    repeats <span class="o">=</span> <span class="m">5</span><span class="p">)</span>
+fitControl <span class="o">&lt;-</span> trainControl<span class="p">(</span>method <span class="o">=</span> <span class="s">"repeatedcv"</span><span class="p">,</span> 
+                           <span class="c1"># 5-fold CV repeated 5 times</span>
+                           number <span class="o">=</span> <span class="m">5</span><span class="p">,</span>
+                           repeats <span class="o">=</span> <span class="m">5</span><span class="p">)</span>
 modFit <span class="o">&lt;-</span> train<span class="p">(</span>classe <span class="o">~</span><span class="m">.</span><span class="p">,</span> 
                 method<span class="o">=</span><span class="s">'rf'</span><span class="p">,</span> 
                 trControl <span class="o">=</span> fitControl<span class="p">,</span> 
                 data <span class="o">=</span> trainingPca<span class="p">)</span>
 </pre></div>
+
+<pre><code>## Loading required package: randomForest
+</code></pre>
+
+<pre><code>## Warning: package 'randomForest' was built under R version 3.1.1
+</code></pre>
+
+<pre><code>## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.
+</code></pre>
 
 <p>The convergence of the training process is shown in the following figure:</p>
 
