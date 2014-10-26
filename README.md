@@ -1,5 +1,4 @@
-PML-HAR: Recognition of weight lifting exercises
-========
+# Recognition of weight lifting exercises
 
 # Executive summary
 This report describes the process followed to build a prediction model that infers the way a weight lifting exercise is performed. The data used to train the model are gathered from six participants that are being monitored by a set of accelerometers while they perform a barbel lifting exercise in five different ways (one right and four common mistakes).
@@ -10,8 +9,16 @@ In order to make this research fully reproducible, it contains the complete R-co
 The following chunk of code prepares the work space, fetches the data sets and loads them in the environment:
 
 ```r
-library(caret)
-library(ggplot2)
+suppressWarnings(library(caret))
+```
+
+```
+## Loading required package: lattice
+## Loading required package: ggplot2
+```
+
+```r
+suppressWarnings(library(ggplot2))
 rm(list=ls())
 dataUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
 validationUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
@@ -34,7 +41,8 @@ With 160 features in each data set apart from the type of exercise and 19622 ins
 Taking a first look a the data we can see some of the (a priori) most representative features:
 
 ```r
-dataSet[1:5, c('user_name', 'classe', 'num_window', 'roll_belt', 'pitch_belt', 'yaw_belt')]
+dataSet[1:5, c('user_name', 'classe', 'num_window',
+               'roll_belt', 'pitch_belt', 'yaw_belt')]
 ```
 
 ```
@@ -52,8 +60,10 @@ qplot(classe, fill=classe, data=dataSet)
 ```
 
 ![plot of chunk classDistribution](./PML-project_files/figure-html/classDistribution.png) 
+
 It can be seen that not all classes are equally sampled. It would be desirable to preserve the class distribution when splitting the data set into training and testing sets.
 Besides, the first five features are not interesting for prediction, apart from (maybe) the user name. Those features are:
+
 
 ```r
 names(dataSet)[c(1:5)[-2]]
@@ -92,10 +102,13 @@ mean(is.na(dataSetNum))
 ```
 
 ```r
-hist(100*colMeans(is.na(dataSetNum)), col='lightblue', xlab='NA occurrences', ylab='num features', main = "Number of NA's (in %)")
+hist(100*colMeans(is.na(dataSetNum)), col='lightblue', 
+     xlab='NA occurrences', ylab='num features', 
+     main = "Number of NA's (in %)")
 ```
 
 ![plot of chunk naValues](./PML-project_files/figure-html/naValues.png) 
+
 Analyzing the NA distribution it can be seen that there are only two cases: those features which contain no NA's, and those that do. In the seconds case, when there are NA's in the data, they are present in almost the 100% of the instances. We could remove those features since they are not going to be useful for prediction:
 
 
@@ -104,10 +117,15 @@ completeFeatures <- complete.cases(t(dataSetNum))
 dataSetNum <- dataSetNum[, completeFeatures]
 validationSetNum <- validationSetNum[, completeFeatures]
 ```
+
 This could also be done using the `nearZeroVar()` function, but in this case it was pretty clear which features would have zero variance. 
 
 
 # Data partitioning
+
+The data set labeled with the type of exercise (classe) is split into a training and a testing dataset. The training set will be used to train the predictor and the testing to evaluate its out of sample accuracy. The following code splits the data giving a 75% to the  training set:
+
+
 
 ```r
 # Split training set into training and testing to build our predictor
@@ -156,7 +174,8 @@ validationPca <- predict(modPca, validation)
 trainingPca$classe <- y[inTrain]
 testingPca$classe <- y[-inTrain]
 ```
- Finally the class is added back from the original data set.
+ 
+Finally the class is added back from the original data set.
 
 
 # Model training
@@ -166,11 +185,10 @@ The model selected is a random forest predictor. The training process uses k-fol
 
 ```r
 set.seed(32335)
-fitControl <- trainControl(# 5-fold CV
-    method = "repeatedcv", 
-    number = 5,
-    # repeated 5 times
-    repeats = 5)
+fitControl <- trainControl(method = "repeatedcv", 
+                           # 5-fold CV repeated 5 times
+                           number = 5,
+                           repeats = 5)
 modFit <- train(classe ~., 
                 method='rf', 
                 trControl = fitControl, 
