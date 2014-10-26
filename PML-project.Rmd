@@ -12,7 +12,7 @@ In order to make this research fully reproducible, it contains the complete R-co
 
 # Getting the data
 The following chunk of code prepares the work space, fetches the data sets and loads them in the environment:
-```{r getData, echo=TRUE}
+```{r getData, echo=FALSE}
 library(caret)
 library(ggplot2)
 rm(list=ls())
@@ -32,7 +32,8 @@ With `r numFeatures` features in each data set apart from the type of exercise a
 # Exploratory analysis
 Taking a first look a the data we can see some of the (a priori) most representative features:
 ```{r headDataSet, echo=TRUE}
-dataSet[1:5, c('user_name', 'classe', 'num_window', 'roll_belt', 'pitch_belt', 'yaw_belt')]
+dataSet[1:5, c('user_name', 'classe', 'num_window',
+               'roll_belt', 'pitch_belt', 'yaw_belt')]
 ```
 The following figure shows the class distribution for the data set:
 ```{r classDistribution, echo=TRUE}
@@ -63,7 +64,9 @@ The data set contains a huge percent of NA values:
 
 ```{r naValues, echo=TRUE}
 mean(is.na(dataSetNum))
-hist(100*colMeans(is.na(dataSetNum)), col='lightblue', xlab='NA occurrences', ylab='num features', main = "Number of NA's (in %)")
+hist(100*colMeans(is.na(dataSetNum)), col='lightblue', 
+     xlab='NA occurrences', ylab='num features', 
+     main = "Number of NA's (in %)")
 ```
 Analyzing the NA distribution it can be seen that there are only two cases: those features which contain no NA's, and those that do. In the seconds case, when there are NA's in the data, they are present in almost the 100% of the instances. We could remove those features since they are not going to be useful for prediction:
 
