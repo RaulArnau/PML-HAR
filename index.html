@@ -1,70 +1,345 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
+
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Pml-har by RaulArnau</title>
+    <meta name="description" content="Pml-har : Coursera Practical Machine Learning Course. Final Project: Human Activity Recognition">
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <title>Pml-har</title>
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
-        <h1>Pml-har</h1>
-        <p>Coursera Practical Machine Learning Course. Final Project: Human Activity Recognition</p>
-        <p class="view"><a href="https://github.com/RaulArnau/PML-HAR">View the Project on GitHub <small>RaulArnau/PML-HAR</small></a></p>
-        <ul>
-          <li><a href="https://github.com/RaulArnau/PML-HAR/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/RaulArnau/PML-HAR/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/RaulArnau/PML-HAR">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/RaulArnau/PML-HAR">View on GitHub</a>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+          <h1 id="project_title">Pml-har</h1>
+          <h2 id="project_tagline">Coursera Practical Machine Learning Course. Final Project: Human Activity Recognition</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/RaulArnau/PML-HAR/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/RaulArnau/PML-HAR/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="pml-har-recognition-of-weight-lifting-exercises" class="anchor" href="#pml-har-recognition-of-weight-lifting-exercises"><span class="octicon octicon-link"></span></a>PML-HAR: Recognition of weight lifting exercises</h1>
+
+<h1>
+<a name="executive-summary" class="anchor" href="#executive-summary"><span class="octicon octicon-link"></span></a>Executive summary</h1>
+
+<p>This report describes the process followed to build a prediction model that infers the way a weight lifting exercise is performed. The data used to train the model are gathered from six participants that are being monitored by a set of accelerometers while they perform a barbel lifting exercise in five different ways (one right and four common mistakes).</p>
+
+<p>In order to make this research fully reproducible, it contains the complete R-code necessary to get the data sets (which are available online), explore them, clean and prepare the data sets, build the model and use it to predict the outcome for 20 instances. The final model is a random forest predictor which obtains a very good out of sample accuracy (around 98%). The predictor is robust, trained using k-fold cross validation, which balances bias and variance trade-offs using the out of sample accuracy as a metric to choose the best model.</p>
+
+<h1>
+<a name="getting-the-data" class="anchor" href="#getting-the-data"><span class="octicon octicon-link"></span></a>Getting the data</h1>
+
+<p>The following chunk of code prepares the work space, fetches the data sets and loads them in the environment:</p>
+
+<div class="highlight highlight-r"><pre><span class="kn">library</span><span class="p">(</span>caret<span class="p">)</span>
+</pre></div>
+
+<pre><code>## Warning: package 'caret' was built under R version 3.1.1
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<pre><code>## Loading required package: lattice
+## Loading required package: ggplot2
+</code></pre>
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<pre><code>## Warning: package 'ggplot2' was built under R version 3.1.1
+</code></pre>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<div class="highlight highlight-r"><pre><span class="kn">library</span><span class="p">(</span>ggplot2<span class="p">)</span>
+<span class="kp">rm</span><span class="p">(</span><span class="kt">list</span><span class="o">=</span><span class="kp">ls</span><span class="p">())</span>
+dataUrl <span class="o">&lt;-</span> <span class="s">"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"</span>
+validationUrl <span class="o">&lt;-</span> <span class="s">"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"</span>
+dataFile <span class="o">&lt;-</span> <span class="s">"pml-training.csv"</span>
+validationFile <span class="o">&lt;-</span> <span class="s">"pml-testing.csv"</span>
+<span class="c1"># download.file(dataUrl, dataFile, method='auto')</span>
+<span class="c1"># download.file(validationUrl, validationFile, method='auto')</span>
+dataSet <span class="o">&lt;-</span> read.csv<span class="p">(</span>dataFile<span class="p">,</span> na.strings<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="s">"NA"</span><span class="p">,</span> <span class="s">""</span><span class="p">))</span>
+validationSet <span class="o">&lt;-</span> read.csv<span class="p">(</span>validationFile<span class="p">,</span> na.strings<span class="o">=</span><span class="kt">c</span><span class="p">(</span><span class="s">"NA"</span><span class="p">,</span> <span class="s">""</span><span class="p">))</span>
+numInstances <span class="o">&lt;-</span> <span class="kp">dim</span><span class="p">(</span>dataSet<span class="p">)[</span><span class="m">1</span><span class="p">];</span> numFeatures <span class="o">&lt;-</span> <span class="kp">dim</span><span class="p">(</span>dataSet<span class="p">)[</span><span class="m">2</span><span class="p">]</span>
+<span class="kp">dim</span><span class="p">(</span>validationSet<span class="p">)</span>
+</pre></div>
 
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<pre><code>## [1]  20 160
+</code></pre>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>With 160 features in each data set apart from the type of exercise and 19622 instances in the training set. </p>
 
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<h1>
+<a name="exploratory-analysis" class="anchor" href="#exploratory-analysis"><span class="octicon octicon-link"></span></a>Exploratory analysis</h1>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p>Taking a first look a the data we can see some of the (a priori) most representative features:</p>
 
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
+<div class="highlight highlight-r"><pre>dataSet<span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">,</span> <span class="kt">c</span><span class="p">(</span><span class="s">'user_name'</span><span class="p">,</span> <span class="s">'classe'</span><span class="p">,</span> <span class="s">'num_window'</span><span class="p">,</span> <span class="s">'roll_belt'</span><span class="p">,</span> <span class="s">'pitch_belt'</span><span class="p">,</span> <span class="s">'yaw_belt'</span><span class="p">)]</span>
+</pre></div>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<pre><code>##   user_name classe num_window roll_belt pitch_belt yaw_belt
+## 1  carlitos      A         11      1.41       8.07    -94.4
+## 2  carlitos      A         11      1.41       8.07    -94.4
+## 3  carlitos      A         11      1.42       8.07    -94.4
+## 4  carlitos      A         12      1.48       8.05    -94.4
+## 5  carlitos      A         12      1.48       8.07    -94.4
+</code></pre>
+
+<p>The following figure shows the class distribution for the data set:</p>
+
+<div class="highlight highlight-r"><pre>qplot<span class="p">(</span>classe<span class="p">,</span> fill<span class="o">=</span>classe<span class="p">,</span> data<span class="o">=</span>dataSet<span class="p">)</span>
+</pre></div>
+
+<p><img src="./PML-project_files/figure-html/classDistribution.png" alt="plot of chunk classDistribution"> 
+It can be seen that not all classes are equally sampled. It would be desirable to preserve the class distribution when splitting the data set into training and testing sets.
+Besides, the first five features are not interesting for prediction, apart from (maybe) the user name. Those features are:</p>
+
+<div class="highlight highlight-r"><pre><span class="kp">names</span><span class="p">(</span>dataSet<span class="p">)[</span><span class="kt">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">)[</span><span class="m">-2</span><span class="p">]]</span>
+</pre></div>
+
+<pre><code>## [1] "X"                    "raw_timestamp_part_1" "raw_timestamp_part_2"
+## [4] "cvtd_timestamp"
+</code></pre>
+
+<h1>
+<a name="cleaning-data" class="anchor" href="#cleaning-data"><span class="octicon octicon-link"></span></a>Cleaning data</h1>
+
+<p>The following code gets rid of non interesting features and cast the rest of them as numeric values. Factor variables, such as the user name, are also converted to numeric:</p>
+
+<div class="highlight highlight-r"><pre><span class="c1"># convert interesting features to numeric values</span>
+dataSetNum <span class="o">&lt;-</span> dataSet<span class="p">[,</span> <span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">7</span><span class="o">:</span><span class="m">159</span><span class="p">)]</span> <span class="c1"># 2: user name</span>
+validationSetNum <span class="o">&lt;-</span> validationSet<span class="p">[,</span> <span class="kt">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">7</span><span class="o">:</span><span class="m">159</span><span class="p">)]</span>
+<span class="c1"># Store class in a separate variable for simplicity</span>
+y <span class="o">&lt;-</span> dataSet<span class="o">$</span>classe
+
+dataSetNum <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span><span class="kp">sapply</span><span class="p">(</span>dataSetNum<span class="p">,</span> <span class="kp">as.numeric</span><span class="p">))</span>
+validationSetNum <span class="o">&lt;-</span> <span class="kt">data.frame</span><span class="p">(</span><span class="kp">sapply</span><span class="p">(</span>validationSetNum<span class="p">,</span> <span class="kp">as.numeric</span><span class="p">))</span>
+</pre></div>
+
+<p>The data set contains a huge percent of NA values:</p>
+
+<div class="highlight highlight-r"><pre><span class="kp">mean</span><span class="p">(</span><span class="kp">is.na</span><span class="p">(</span>dataSetNum<span class="p">))</span>
+</pre></div>
+
+<pre><code>## [1] 0.6359
+</code></pre>
+
+<div class="highlight highlight-r"><pre>hist<span class="p">(</span><span class="m">100</span><span class="o">*</span><span class="kp">colMeans</span><span class="p">(</span><span class="kp">is.na</span><span class="p">(</span>dataSetNum<span class="p">)),</span> col<span class="o">=</span><span class="s">'lightblue'</span><span class="p">,</span> xlab<span class="o">=</span><span class="s">'NA occurrences'</span><span class="p">,</span> ylab<span class="o">=</span><span class="s">'num features'</span><span class="p">,</span> main <span class="o">=</span> <span class="s">"Number of NA's (in %)"</span><span class="p">)</span>
+</pre></div>
+
+<p><img src="./PML-project_files/figure-html/naValues.png" alt="plot of chunk naValues"> 
+Analyzing the NA distribution it can be seen that there are only two cases: those features which contain no NA's, and those that do. In the seconds case, when there are NA's in the data, they are present in almost the 100% of the instances. We could remove those features since they are not going to be useful for prediction:</p>
+
+<div class="highlight highlight-r"><pre>completeFeatures <span class="o">&lt;-</span> complete.cases<span class="p">(</span><span class="kp">t</span><span class="p">(</span>dataSetNum<span class="p">))</span>
+dataSetNum <span class="o">&lt;-</span> dataSetNum<span class="p">[,</span> completeFeatures<span class="p">]</span>
+validationSetNum <span class="o">&lt;-</span> validationSetNum<span class="p">[,</span> completeFeatures<span class="p">]</span>
+</pre></div>
+
+<p>This could also be done using the <code>nearZeroVar()</code> function, but in this case it was pretty clear which features would have zero variance. </p>
+
+<h1>
+<a name="data-partitioning" class="anchor" href="#data-partitioning"><span class="octicon octicon-link"></span></a>Data partitioning</h1>
+
+<div class="highlight highlight-r"><pre><span class="c1"># Split training set into training and testing to build our predictor</span>
+<span class="kp">set.seed</span><span class="p">(</span><span class="m">3232</span><span class="p">)</span>
+inTrain <span class="o">&lt;-</span> createDataPartition<span class="p">(</span>y<span class="o">=</span>y<span class="p">,</span> p<span class="o">=</span><span class="m">0.75</span><span class="p">,</span> <span class="kt">list</span><span class="o">=</span><span class="kc">FALSE</span><span class="p">)</span>
+training <span class="o">&lt;-</span> dataSetNum<span class="p">[</span>inTrain<span class="p">,</span> <span class="p">]</span>
+testing <span class="o">&lt;-</span> dataSetNum<span class="p">[</span><span class="o">-</span>inTrain<span class="p">,</span> <span class="p">]</span>
+<span class="kp">dim</span><span class="p">(</span>training<span class="p">)</span>
+</pre></div>
+
+<pre><code>## [1] 14718    54
+</code></pre>
+
+<div class="highlight highlight-r"><pre><span class="kp">dim</span><span class="p">(</span>testing<span class="p">)</span>
+</pre></div>
+
+<pre><code>## [1] 4904   54
+</code></pre>
+
+<p>Besides, we could also remove those features which present a high correlation in the training set, since they are not going to provide useful information:</p>
+
+<div class="highlight highlight-r"><pre><span class="c1"># remove highly correlated features</span>
+corIdx <span class="o">&lt;-</span> findCorrelation<span class="p">(</span>cor<span class="p">(</span>training<span class="p">))</span>
+training <span class="o">&lt;-</span> training<span class="p">[,</span> <span class="o">-</span>corIdx<span class="p">]</span>
+testing <span class="o">&lt;-</span> testing<span class="p">[,</span> <span class="o">-</span>corIdx<span class="p">]</span>
+validation <span class="o">&lt;-</span> validationSetNum<span class="p">[,</span> <span class="o">-</span>corIdx<span class="p">]</span>
+</pre></div>
+
+<p>To refine a bit more the number of features used for the model training, we run a principal components analysis on the training data set. From the new set of features we keep only those that explain a 95% of the variability:</p>
+
+<div class="highlight highlight-r"><pre><span class="c1"># use PCA to get rid of some features</span>
+<span class="c1"># keep only those that explain the 95% of the variability</span>
+modPca <span class="o">&lt;-</span> preProcess<span class="p">(</span>training<span class="p">,</span> method <span class="o">=</span> <span class="s">'pca'</span><span class="p">,</span> threshold <span class="o">=</span> <span class="m">0.95</span><span class="p">)</span>
+trainingPca <span class="o">&lt;-</span> predict<span class="p">(</span>modPca<span class="p">,</span> training<span class="p">)</span>
+testingPca <span class="o">&lt;-</span> predict<span class="p">(</span>modPca<span class="p">,</span> testing<span class="p">)</span>
+validationPca <span class="o">&lt;-</span> predict<span class="p">(</span>modPca<span class="p">,</span> validation<span class="p">)</span>
+
+<span class="c1"># add the class to the features datasets</span>
+trainingPca<span class="o">$</span>classe <span class="o">&lt;-</span> y<span class="p">[</span>inTrain<span class="p">]</span>
+testingPca<span class="o">$</span>classe <span class="o">&lt;-</span> y<span class="p">[</span><span class="o">-</span>inTrain<span class="p">]</span>
+</pre></div>
+
+<p>Finally the class is added back from the original data set.</p>
+
+<h1>
+<a name="model-training" class="anchor" href="#model-training"><span class="octicon octicon-link"></span></a>Model training</h1>
+
+<p>The model selected is a random forest predictor. The training process uses k-fold cross validation in order to avoid over fitting the training data. Not using all the available training data for building the model is going to increase the predictor bias, but on the other hand it has provided better out of sample errors during the tests. The model is trained according to the following code:</p>
+
+<div class="highlight highlight-r"><pre><span class="kp">set.seed</span><span class="p">(</span><span class="m">32335</span><span class="p">)</span>
+fitControl <span class="o">&lt;-</span> trainControl<span class="p">(</span><span class="c1"># 5-fold CV</span>
+    method <span class="o">=</span> <span class="s">"repeatedcv"</span><span class="p">,</span> 
+    number <span class="o">=</span> <span class="m">5</span><span class="p">,</span>
+    <span class="c1"># repeated 5 times</span>
+    repeats <span class="o">=</span> <span class="m">5</span><span class="p">)</span>
+modFit <span class="o">&lt;-</span> train<span class="p">(</span>classe <span class="o">~</span><span class="m">.</span><span class="p">,</span> 
+                method<span class="o">=</span><span class="s">'rf'</span><span class="p">,</span> 
+                trControl <span class="o">=</span> fitControl<span class="p">,</span> 
+                data <span class="o">=</span> trainingPca<span class="p">)</span>
+</pre></div>
+
+<pre><code>## Loading required package: randomForest
+</code></pre>
+
+<pre><code>## Warning: package 'randomForest' was built under R version 3.1.1
+</code></pre>
+
+<pre><code>## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.
+</code></pre>
+
+<p>The convergence of the training process is shown in the following figure:</p>
+
+<div class="highlight highlight-r"><pre><span class="c1"># plotting the resampling profile</span>
+trellis.par.set<span class="p">(</span>caretTheme<span class="p">())</span>
+plot<span class="p">(</span>modFit<span class="p">,</span> col<span class="o">=</span><span class="s">'purple'</span><span class="p">,</span> lw<span class="o">=</span><span class="m">1</span><span class="p">)</span>
+</pre></div>
+
+<p><img src="./PML-project_files/figure-html/plotResample.png" alt="plot of chunk plotResample"> </p>
+
+<h2>
+<a name="validation" class="anchor" href="#validation"><span class="octicon octicon-link"></span></a>Validation</h2>
+
+<p>In order to validate the model, it is used to predict the classes for the training and testing data sets:</p>
+
+<div class="highlight highlight-r"><pre><span class="c1"># in sample error</span>
+trainingPrediction <span class="o">&lt;-</span> predict<span class="p">(</span>modFit<span class="p">,</span> trainingPca<span class="p">)</span>
+confusionMatrix<span class="p">(</span>trainingPca<span class="o">$</span>classe<span class="p">,</span> trainingPrediction<span class="p">)</span>
+</pre></div>
+
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 4185    0    0    0    0
+##          B    0 2848    0    0    0
+##          C    0    0 2567    0    0
+##          D    0    0    0 2412    0
+##          E    0    0    0    0 2706
+## 
+## Overall Statistics
+##                                 
+##                Accuracy : 1     
+##                  95% CI : (1, 1)
+##     No Information Rate : 0.284 
+##     P-Value [Acc &gt; NIR] : &lt;2e-16
+##                                 
+##                   Kappa : 1     
+##  Mcnemar's Test P-Value : NA    
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             1.000    1.000    1.000    1.000    1.000
+## Specificity             1.000    1.000    1.000    1.000    1.000
+## Pos Pred Value          1.000    1.000    1.000    1.000    1.000
+## Neg Pred Value          1.000    1.000    1.000    1.000    1.000
+## Prevalence              0.284    0.194    0.174    0.164    0.184
+## Detection Rate          0.284    0.194    0.174    0.164    0.184
+## Detection Prevalence    0.284    0.194    0.174    0.164    0.184
+## Balanced Accuracy       1.000    1.000    1.000    1.000    1.000
+</code></pre>
+
+<div class="highlight highlight-r"><pre><span class="c1"># out of sample error</span>
+testingPrediction <span class="o">&lt;-</span> predict<span class="p">(</span>modFit<span class="p">,</span> testingPca<span class="p">)</span>
+confusionMatrix<span class="p">(</span>testingPca<span class="o">$</span>classe<span class="p">,</span> testingPrediction<span class="p">)</span>
+</pre></div>
+
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1385    2    3    4    1
+##          B   19  916   14    0    0
+##          C    3   15  833    3    1
+##          D    1    2   37  761    3
+##          E    0    4    0    6  891
+## 
+## Overall Statistics
+##                                        
+##                Accuracy : 0.976        
+##                  95% CI : (0.971, 0.98)
+##     No Information Rate : 0.287        
+##     P-Value [Acc &gt; NIR] : &lt; 2e-16      
+##                                        
+##                   Kappa : 0.97         
+##  Mcnemar's Test P-Value : 6.02e-08     
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity             0.984    0.976    0.939    0.983    0.994
+## Specificity             0.997    0.992    0.995    0.990    0.998
+## Pos Pred Value          0.993    0.965    0.974    0.947    0.989
+## Neg Pred Value          0.993    0.994    0.987    0.997    0.999
+## Prevalence              0.287    0.191    0.181    0.158    0.183
+## Detection Rate          0.282    0.187    0.170    0.155    0.182
+## Detection Prevalence    0.284    0.194    0.174    0.164    0.184
+## Balanced Accuracy       0.990    0.984    0.967    0.986    0.996
+</code></pre>
+
+<p>It can be seen that the out of sample error is quite good, reaching an accuracy around the 98%.</p>
+
+<h1>
+<a name="predictions" class="anchor" href="#predictions"><span class="octicon octicon-link"></span></a>Predictions</h1>
+
+<p>Finally the trained model is used to predict the classes for the unlabeled data set. The obtained predictions are stored in separate files as required:</p>
+
+<div class="highlight highlight-r"><pre><span class="c1"># Predict validation set</span>
+prediction <span class="o">&lt;-</span> predict<span class="p">(</span>modFit<span class="p">,</span> validationPca<span class="p">)</span>
+<span class="c1"># save results in the submission format</span>
+pml_write_files <span class="o">=</span> <span class="kr">function</span><span class="p">(</span>x<span class="p">)</span> <span class="p">{</span>
+    n <span class="o">=</span> <span class="kp">length</span><span class="p">(</span>x<span class="p">)</span>
+    <span class="kr">for</span> <span class="p">(</span>i <span class="kr">in</span> <span class="m">1</span><span class="o">:</span>n<span class="p">)</span> <span class="p">{</span>
+        filename <span class="o">=</span> <span class="kp">paste0</span><span class="p">(</span><span class="s">"problem_id_"</span><span class="p">,</span> i<span class="p">,</span> <span class="s">".txt"</span><span class="p">)</span>
+        write.table<span class="p">(</span>x<span class="p">[</span>i<span class="p">],</span> file <span class="o">=</span> filename<span class="p">,</span> quote <span class="o">=</span> <span class="kc">FALSE</span><span class="p">,</span> row.names <span class="o">=</span> <span class="kc">FALSE</span><span class="p">,</span> 
+                    col.names <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+pml_write_files<span class="p">(</span>prediction<span class="p">)</span>
+</pre></div>
       </section>
     </div>
-    <footer>
-      <p>Project maintained by <a href="https://github.com/RaulArnau">RaulArnau</a></p>
-      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
-    </footer>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Pml-har maintained by <a href="https://github.com/RaulArnau">RaulArnau</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
     
+
   </body>
 </html>
