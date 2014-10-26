@@ -11,22 +11,6 @@ The following chunk of code prepares the work space, fetches the data sets and l
 
 ```r
 library(caret)
-```
-
-```
-## Warning: package 'caret' was built under R version 3.1.1
-```
-
-```
-## Loading required package: lattice
-## Loading required package: ggplot2
-```
-
-```
-## Warning: package 'ggplot2' was built under R version 3.1.1
-```
-
-```r
 library(ggplot2)
 rm(list=ls())
 dataUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
